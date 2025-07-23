@@ -1,7 +1,7 @@
 const kelasModel = require('../models/kelasModel');
 
-async function getAllKelas() {
-    return await kelasModel.getAllKelas();
+async function getAllKelas(query) {
+    return await kelasModel.getAllKelas(query);
 };
 
 async function getKelasById(id) {

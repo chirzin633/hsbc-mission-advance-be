@@ -2,8 +2,21 @@ const kelasService = require('../services/kelasService');
 
 async function getAllKelas(req, res) {
     try {
-        const kelas = await kelasService.getAllKelas();
-        res.status(200).json(kelas);
+        const query = req.query;
+        const data = await kelasService.getAllKelas(query);
+
+        if (data.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "Data kelas tidak ditemukan",
+                query: query
+            });
+        }
+        res.status(200).json({
+            success: true,
+            data,
+            query
+        });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

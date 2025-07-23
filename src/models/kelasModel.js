@@ -1,22 +1,61 @@
 const db = require('../config/database');
 
-async function getAllKelas() {
-    const [rows] = await db.query(
-        // `SELECT kelas.*, kategori_kelas.nama_kategori, tutor.user_id AS tutor_user_id FROM kelas LEFT JOIN kategori_kelas ON kelas.kategori_id = kategori_kelas.kategori_id LEFT JOIN tutor ON kelas.tutor_id = tutor.tutor_id`
-        `SELECT
-         kelas.kelas_id,
-         kelas.nama_kelas,
-         kategori_kelas.nama_kategori,
-         kelas.deskripsi,
-         kelas.level,
-         kelas.harga,
-         user.name AS tutor_name,
-         tutor.pengalaman
-         FROM kelas
-         JOIN kategori_kelas ON kelas.kategori_id = kategori_kelas.kategori_id
-         JOIN tutor ON kelas.tutor_id = tutor.tutor_id
-         JOIN user ON tutor.user_id = user.user_id`
-    );
+async function getAllKelas(query = {}) {
+    let baseQuery = `SELECT
+      kelas.kelas_id,
+      kelas.nama_kelas,
+      kelas.deskripsi,
+      kelas.harga,
+      kelas.level,
+      kategori_kelas.nama_kategori,
+      user.name AS tutor_name,
+      tutor.pengalaman
+    FROM kelas
+    JOIN kategori_kelas ON kelas.kategori_id = kategori_kelas.kategori_id
+    JOIN tutor ON kelas.tutor_id = tutor.tutor_id
+    JOIN user ON tutor.user_id = user.user_id
+    WHERE 1=1
+    `;
+
+    const params = [];
+    // search
+    if (query.search) {
+        const searchTerm = `%${query.search.trim()}%`;
+        baseQuery += ` AND (kelas.nama_kelas LIKE ? OR kelas.deskripsi LIKE ?)`;
+        params.push(searchTerm, searchTerm);
+    }
+
+    // filter
+    if (query.kategori_id) {
+        baseQuery += ` AND kelas.kategori_id = ?`;
+        params.push(query.kategori_id);
+    }
+    // filter
+    if (query.level) {
+        baseQuery += ` AND kelas.level = ? `;
+        params.push(query.level)
+    }
+
+    // sort
+    let orderBy = 'kelas.kelas_id DESC'; // default
+    if (query.sort) {
+        const [field, direction] = query.sort.split(':');
+        const sortFieldMap = {
+            nama_kelas: 'kelas.nama_kelas',
+            harga: 'kelas.harga',
+            level: 'kelas.level',
+            nama_kategori: 'kategori_kelas.nama_kategori',
+            tutor_name: 'user.name'
+        };
+
+        const sortField = sortFieldMap[field] || 'kelas.kelas_id';
+        const sortDirection = direction === 'asc' ? 'ASC' : 'DESC';
+        orderBy = `${sortField} ${sortDirection}`;
+    }
+
+    baseQuery += ` ORDER BY ${orderBy}`;
+
+    const [rows] = await db.query(baseQuery, params);
     return rows;
 };
 
