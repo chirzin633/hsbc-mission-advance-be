@@ -23,17 +23,17 @@ async function deleteUser(id) {
 
 async function sendVerificationEmail(email, token) {
     const transporter = nodemailer.createTransport({
-        host: 'smtp.ethereal.email',
-        port: 587,
+        host: process.env.SMTP_HOST,
+        port: process.env.SMTP_PORT,
         auth: {
-            user: 'jamison.padberg1@ethereal.email',
-            pass: 'tCeadAjCawtMyW8jCJ'
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASS
         }
     });
     const verificationLink = `http://localhost:3000/api/users/verify-email?token=${token}`;
 
     await transporter.sendMail({
-        from: '"Videobelajar" <no-reply@videobelajar.com>',
+        from: process.env.SMPT_FROM,
         to: email,
         subject: 'Verifikasi Email',
         html: `<p>Klik link berikut untuk verifikasi email anda:</p>
