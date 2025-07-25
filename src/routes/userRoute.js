@@ -12,5 +12,7 @@ router.put('/users/:id', userController.updateUser);
 router.delete('/users/:id', userController.deleteUser);
 
 router.post('/login', authController.login);
+router.post('/register', userController.registerUser);
+router.get('/verify-email', userController.verifyEmail);
 
 module.exports = router;

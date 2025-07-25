@@ -1,4 +1,5 @@
 const userService = require('../services/userService');
+const userModel = require('../models/userModel');
 
 async function getAllUsers(req, res) {
     try {
@@ -53,10 +54,55 @@ async function deleteUser(req, res) {
     }
 };
 
+
+async function registerUser(req, res) {
+    try {
+        const { userId, verificationToken } = await userModel.createUser(req.body);
+        await userService.sendVerificationEmail(req.body.email, verificationToken);
+        res.status(201).json({ message: 'User registered. Please check email to verify.', userId });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+async function verifyEmail(req, res) {
+    const { token } = req.query;
+
+    if (!token) {
+        return res.status(400).json({
+            success: false,
+            message: 'Verification token is required'
+        });
+    }
+    try {
+        const cleanToken = token.toString().trim();
+        const user = await userModel.findUserByToken(cleanToken);
+        if (!user) {
+            return res.status(400).json({
+                success: false,
+                message: 'Token invalid or expired'
+            });
+        }
+        await userModel.setUserVerified(user.user_id);
+        res.status(200).json({
+            success: true,
+            message: 'Email Anda telah berhasil diverifikasi!',
+            data: {
+                name: user.name,
+                email: user.email
+            }
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
 module.exports = {
     getAllUsers,
     getUserById,
     createUser,
     updateUser,
-    deleteUser
+    deleteUser,
+    registerUser,
+    verifyEmail
 };

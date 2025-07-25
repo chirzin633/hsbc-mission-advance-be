@@ -1,6 +1,7 @@
 const db = require('../config/database');
 const { formatDateTimeWIB } = require('../utils/formatDateWIB');
 const bcrypt = require('bcrypt');
+const { v4: uuidv4 } = require('uuid');
 
 async function getAllUsers() {
     const [rows] = await db.query('SELECT * FROM user');
@@ -28,10 +29,11 @@ async function createUser(data) {
     }
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
+    const verificationToken = uuidv4();
     const [result] = await db.query(
-        `INSERT INTO user (name, jenis_kelamin, email, password, role, tgl_regist) VALUES (?,?,?,?,?, NOW())`, [name, jenis_kelamin, email, hashedPassword, role]
+        `INSERT INTO user (name, jenis_kelamin, email, password, role, tgl_regist,is_verified, verification_token) VALUES (?,?,?,?,?, NOW(),false,?)`, [name, jenis_kelamin, email, hashedPassword, role, verificationToken]
     );
-    return result.insertId;
+    return { userId: result.insertId, verificationToken };
 }
 
 async function updateUser(id, data) {
@@ -61,10 +63,29 @@ async function deleteUser(id) {
     return result.affectedRows > 0;
 }
 
+async function findUserByToken(token) {
+    if (!token) return null;
+    const cleanToken = token.toString().trim();
+
+    const [rows] = await db.query(
+        `SELECT user_id, email, verification_token, is_verified 
+         FROM user 
+         WHERE verification_token = ? AND is_verified = false`,
+        [cleanToken]
+    );
+    return rows[0] || null;
+}
+
+async function setUserVerified(userId) {
+    await db.query(`UPDATE user SET is_verified = true, verification_token = NULL WHERE user_id = ?`, [userId]);
+}
+
 module.exports = {
     getAllUsers,
     getUserById,
     createUser,
     updateUser,
-    deleteUser
+    deleteUser,
+    findUserByToken,
+    setUserVerified
 };

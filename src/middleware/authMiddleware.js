@@ -1,8 +1,11 @@
 const jwt = require('jsonwebtoken')
-
 const JWT_SECRET = 'cirebon-kota-berintan-1962';
 
 function authenticateToken(req, res, next) {
+
+    if (req.path === '/api/users/verify-email') {
+        return next();
+    }
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
 
