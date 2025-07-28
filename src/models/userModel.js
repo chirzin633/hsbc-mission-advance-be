@@ -80,6 +80,13 @@ async function setUserVerified(userId) {
     await db.query(`UPDATE user SET is_verified = true, verification_token = NULL WHERE user_id = ?`, [userId]);
 }
 
+async function updateUserAvatar(userId, avatarPath) {
+    const [result] = await db.query(
+        'UPDATE user SET avatar = ? WHERE user_id = ?', [avatarPath, userId]
+    );
+    return result.affectedRows > 0;
+}
+
 module.exports = {
     getAllUsers,
     getUserById,
@@ -87,5 +94,6 @@ module.exports = {
     updateUser,
     deleteUser,
     findUserByToken,
-    setUserVerified
+    setUserVerified,
+    updateUserAvatar
 };
