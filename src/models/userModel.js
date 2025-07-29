@@ -87,6 +87,35 @@ async function updateUserAvatar(userId, avatarPath) {
     return result.affectedRows > 0;
 }
 
+async function getFilteredUsers(data) {
+    const { role, search, sort } = data;
+    let query = 'SELECT * FROM user';
+    const params = [];
+    const conditions = [];
+
+    if (role) {
+        conditions.push('role = ?');
+        params.push(role);
+    }
+
+    if (search) {
+        conditions.push('(name LIKE ? OR email LIKE ?)');
+        params.push(`%${search}%`, `%${search}%`);
+    }
+
+    if (conditions.length > 0) {
+        query = query + ' WHERE ' + conditions.join(' AND ');
+    }
+
+    if (sort) {
+        const [field, order] = sort.split('_');
+        query = query + ` ORDER BY ${field} ${order.toUpperCase()}`;
+    }
+
+    const [users] = await db.query(query, params);
+    return users;
+}
+
 module.exports = {
     getAllUsers,
     getUserById,
@@ -95,5 +124,6 @@ module.exports = {
     deleteUser,
     findUserByToken,
     setUserVerified,
-    updateUserAvatar
+    updateUserAvatar,
+    getFilteredUsers
 };

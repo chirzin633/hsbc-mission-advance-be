@@ -3,10 +3,17 @@ const userModel = require('../models/userModel');
 
 async function getAllUsers(req, res) {
     try {
-        const users = await userService.getAllUsers();
-        res.status(200).json(users);
+        const { role, search, sort } = req.query;
+        const users = await userService.getFilteredUsers({ role, search, sort });
+        res.status(200).json({
+            success: true,
+            data: users,
+        });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({
+            success: false,
+            error: err.message
+        });
     }
 };
 

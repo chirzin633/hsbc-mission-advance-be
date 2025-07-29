@@ -55,8 +55,42 @@ async function verifyUserByToken(token) {
     } catch (err) {
         throw new Error(`Failed to verify user: ${error.message}`);
     }
+}
 
+async function getFilteredUsers(queryParams) {
+    const { role, search, sort } = queryParams;
+    const allowedRoles = ['admin', 'siswa', 'tutor', 'user'];
 
+    if (role && !allowedRoles.includes(role)) {
+        throw new Error(`Invalid role value. Allowed roles: ${allowedRoles.join(', ')}`);
+    }
+
+    if (sort) {
+        const [field, order] = sort.split('_');
+        const allowedFields = ['name', 'email', 'created_at', 'updated_at'];
+
+        if (!allowedFields.includes(field)) {
+            throw new Error(`Invalid sort field. Allowed fields: ${allowedFields.join(', ')}`);
+        }
+
+        const allowedOrders = ['asc', 'desc'];
+        if (!allowedOrders.includes(order.toLowerCase())) {
+            throw new Error(`Invalid sort order. Use 'asc' or 'desc'`);
+        }
+    }
+
+    const users = await userModel.getFilteredUsers({
+        role: role || null,
+        search: search || null,
+        sort: sort || null
+    });
+
+    return {
+        success: true,
+        count: users.length,
+        data: users,
+        filters: { role, search, sort }
+    };
 }
 
 module.exports = {
@@ -66,7 +100,8 @@ module.exports = {
     updateUser,
     deleteUser,
     sendVerificationEmail,
-    verifyUserByToken
+    verifyUserByToken,
+    getFilteredUsers
 };
 
 
